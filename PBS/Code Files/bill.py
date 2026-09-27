@@ -1,5 +1,7 @@
+"""Billing interface and inventory management GUI."""
+
 import sqlite3
-import PIL
+
 import time
 from tkinter import *
 from tkinter import messagebox
@@ -13,6 +15,7 @@ import datetime
 
 
 class BillClass:
+    """Manage billing, cart, customer, and product display operations."""
     def __init__(self, root):
         self.root = root
         #self.root.geometry("1400x760+40+60")
@@ -26,7 +29,7 @@ class BillClass:
         self.net_pay = 0
         self.txt_bill_area = ''
         self.var_date = StringVar()
-        
+        self.new_obj=None
 
         # TITLE
         self.icon_title = PhotoImage(file="images/logo1.png")
@@ -53,14 +56,17 @@ class BillClass:
 
         ProductFrame2=Frame(ProductFrame1,bd=2,relief=RIDGE,bg="white")
         ProductFrame2.place(x=2,y=42,width=752,height=40)
+        lbl_search=Label(ProductFrame2,text="Product Name",font=("times new roman",15,"bold"),bg="white")
+        lbl_search.place(x=345,y=5,height=25)
 
-        lbl_search=Label(ProductFrame2,text="Search Product | By Name ",font=("times new roman",15,"bold"),bg="white",fg="green").place(x=2,y=5,height=25)
+        txt_search=Entry(ProductFrame2,textvariable=self.var_search,font=("times new roman",15),bg="lightyellow")
+        txt_search.place(x=485,y=5,width=150,height=25)
 
-        lbl_search=Label(ProductFrame2,text="Product Name",font=("times new roman",15,"bold"),bg="white").place(x=345,y=5,height=25)
-        txt_search=Entry(ProductFrame2,textvariable=self.var_search,font=("times new roman",15),bg="lightyellow").place(x=485,y=5,width=150,height=25)
-        btn_search=Button(ProductFrame2,text="Search",command=self.search,font=("goudy old style",15),bg="#2196f3",fg="white",cursor="hand2").place(x=645,y=5,width=100,height=25)
-        btn_show_all=Button(ProductFrame2,text="Show all",command=self.show,font=("goudy old style",15),bg="#083531",fg="white",cursor="hand2").place(x=235,y=5,width=100,height=25)
-        
+        btn_search=Button(ProductFrame2,text="Search",command=self.search,font=("goudy old style",15),bg="#2196f3",fg="white",cursor="hand2")
+        btn_search.place(x=645,y=5,width=100,height=25)
+
+        btn_show_all=Button(ProductFrame2,text="Show all",command=self.show,font=("goudy old style",15),bg="#083531",fg="white",cursor="hand2")
+        btn_show_all.place(x=235,y=5,width=100,height=25)
         #Supplier Frame
         ProductFrame3=Frame(ProductFrame1,bd=3,relief=RIDGE)
         ProductFrame3.place(x=2,y=92,width=752,height=273)
@@ -82,7 +88,7 @@ class BillClass:
         self.product_Table.heading("price",text="Price")
         self.product_Table.heading("quantity",text="Quantity")
         self.product_Table.heading("status",text="Status")
-        
+
 
         self.product_Table["show"]="headings"
 
@@ -96,63 +102,53 @@ class BillClass:
         self.product_Table.pack(fill=BOTH,expand=1)
 
         self.product_Table.bind("<ButtonRelease-1>",self.get_data)
-        lbl_note=Label(ProductFrame1,text="Note:'Enter 0 Quantity to remove product from cart.",font=("goudy old style",12),anchor='w',bg="white",fg="red").pack(side=BOTTOM,fill=X)
-
+        Label(ProductFrame1,text="Note:'Enter 0 Quantity to remove product from cart.",font=("goudy old style",12),anchor='w',bg="white",fg="red").pack(side=BOTTOM,fill=X)
         self.var_cname=StringVar()
         self.var_contact=StringVar()
         CustomerFrame=Frame(self.root,bd=4,relief=RIDGE,bg="white")
         CustomerFrame.place(x=780,y=110,width=750,height=80)
 
-        cTitle=Label(CustomerFrame,text="Customer Details",font=("goudy old style",15),bg="lightgray").pack(side=TOP,fill=X)
-        lbl_name=Label(CustomerFrame,text="Name",font=("times new roman",15),bg="white").place(x=5,y=35,height=30)
-        txt_name=Entry(CustomerFrame,textvariable=self.var_cname,font=("times new roman",13),bg="lightyellow").place(x=80,y=35,width=150,height=30)
-
-        lbl_contact=Label(CustomerFrame,text="Contact No.",font=("times new roman",15),bg="white").place(x=250,y=35,height=30)
-        txt_contact=Entry(CustomerFrame,textvariable=self.var_contact,font=("times new roman",13),bg="lightyellow").place(x=350,y=35,width=140,height=30)
-
+        Label(CustomerFrame,text="Customer Details",font=("goudy old style",15),bg="lightgray").pack(side=TOP,fill=X)
+        Label(CustomerFrame,text="Name",font=("times new roman",15),bg="white").place(x=5,y=35,height=30)
+        Entry(CustomerFrame,textvariable=self.var_cname,font=("times new roman",13),bg="lightyellow").place(x=80,y=35,width=150,height=30)
+        Label(CustomerFrame,text="Contact No.",font=("times new roman",15),bg="white").place(x=250,y=35,height=30)
+        Entry(CustomerFrame,textvariable=self.var_contact,font=("times new roman",13),bg="lightyellow").place(x=350,y=35,width=140,height=30)
         self.x =datetime.datetime.now()
-        self.Y = self.x.year
-        self.M = self.x.month
-        self.D = self.x.day
-
-        lbl_date=Label(CustomerFrame,text="Bill Date",font=("times new roman",15),bg="white").place(x=510,y=35,height=30)
-        txt_date=Label(CustomerFrame,text=(str(self.Y)+"-"+str(self.M)+"-"+str(self.D)),font=("times new roman",13),bg="lightyellow").place(x=590,y=35,width=140,height=30)
-
-
+        self.year = self.x.year
+        self.month = self.x.month
+        self.day = self.x.day
+        Label(CustomerFrame,text="Bill Date",font=("times new roman",15),bg="white").place(x=510,y=35,height=30)
+        Label(CustomerFrame,text=(str(self.year)+"-"+str(self.month)+"-"+str(self.day)),font=("times new roman",13),bg="lightyellow").place(x=590,y=35,width=140,height=30)
         #=====Cal Cart Frame======================================
         Cal_Cart_Frame=Frame(self.root,bd=2,relief=RIDGE,bg="white")
         Cal_Cart_Frame.place(x=6,y=515,width=764,height=400)
 
 
             #=====Calculator Frame==============================================
-        self.var_cal_input=StringVar() 
-        
+        self.var_cal_input=StringVar()
+
         Cal_Frame=Frame(Cal_Cart_Frame,bd=9,relief=RIDGE,bg="white")
         Cal_Frame.place(x=465,y=10,width=280,height=385)
 
         txt_cal_input=Entry(Cal_Frame,textvariable=self.var_cal_input,font=('arial',15,'bold'),width=21,bd=10,relief=GROOVE,state='readonly',justify=RIGHT)
         txt_cal_input.grid(row=0,columnspan=4)
 
-        btn_7=Button(Cal_Frame,text='7',font=('arial',15,'bold'),command=lambda:self.get_input(7),bd=5,width=4,pady=10,cursor="hand2").grid(row=1,column=0)
-        btn_8=Button(Cal_Frame,text='8',font=('arial',15,'bold'),command=lambda:self.get_input(8),bd=5,width=4,pady=10,cursor="hand2").grid(row=1,column=1)
-        btn_9=Button(Cal_Frame,text='9',font=('arial',15,'bold'),command=lambda:self.get_input(9),bd=5,width=4,pady=10,cursor="hand2").grid(row=1,column=2)
-        btn_sum=Button(Cal_Frame,text='+',font=('arial',15,'bold'),command=lambda:self.get_input('+'),bd=5,width=4,pady=10,cursor="hand2").grid(row=1,column=3)
-
-        btn_4=Button(Cal_Frame,text='4',font=('arial',15,'bold'),command=lambda:self.get_input(4),bd=5,width=4,pady=10,cursor="hand2").grid(row=2,column=0)
-        btn_5=Button(Cal_Frame,text='5',font=('arial',15,'bold'),command=lambda:self.get_input(5),bd=5,width=4,pady=10,cursor="hand2").grid(row=2,column=1)
-        btn_6=Button(Cal_Frame,text='6',font=('arial',15,'bold'),command=lambda:self.get_input(6),bd=5,width=4,pady=10,cursor="hand2").grid(row=2,column=2)
-        btn_sub=Button(Cal_Frame,text='-',font=('arial',15,'bold'),command=lambda:self.get_input('-'),bd=5,width=4,pady=10,cursor="hand2").grid(row=2,column=3)
-
-        btn_1=Button(Cal_Frame,text='1',font=('arial',15,'bold'),command=lambda:self.get_input(1),bd=5,width=4,pady=10,cursor="hand2").grid(row=3,column=0)
-        btn_2=Button(Cal_Frame,text='2',font=('arial',15,'bold'),command=lambda:self.get_input(2),bd=5,width=4,pady=10,cursor="hand2").grid(row=3,column=1)
-        btn_3=Button(Cal_Frame,text='3',font=('arial',15,'bold'),command=lambda:self.get_input(3),bd=5,width=4,pady=10,cursor="hand2").grid(row=3,column=2)
-        btn_mul=Button(Cal_Frame,text='*',font=('arial',15,'bold'),command=lambda:self.get_input('*'),bd=5,width=4,pady=10,cursor="hand2").grid(row=3,column=3)
-
-        btn_0=Button(Cal_Frame,text='0',font=('arial',15,'bold'),command=lambda:self.get_input(0),bd=5,width=4,pady=15,cursor="hand2").grid(row=4,column=0)
-        btn_c=Button(Cal_Frame,text='c',font=('arial',15,'bold'),command=self.clear_cal,bd=5,width=4,pady=15,cursor="hand2").grid(row=4,column=1)
-        btn_eq=Button(Cal_Frame,text='=',font=('arial',15,'bold'),command=self.perform_cal,bd=5,width=4,pady=15,cursor="hand2").grid(row=4,column=2)
-        btn_div=Button(Cal_Frame,text='/',font=('arial',15,'bold'),command=lambda:self.get_input('/'),bd=5,width=4,pady=15,cursor="hand2").grid(row=4,column=3)
-
+        Button(Cal_Frame,text='7',font=('arial',15,'bold'),command=lambda:self.get_input(7),bd=5,width=4,pady=10,cursor="hand2").grid(row=1,column=0)
+        Button(Cal_Frame,text='8',font=('arial',15,'bold'),command=lambda:self.get_input(8),bd=5,width=4,pady=10,cursor="hand2").grid(row=1,column=1)
+        Button(Cal_Frame,text='9',font=('arial',15,'bold'),command=lambda:self.get_input(9),bd=5,width=4,pady=10,cursor="hand2").grid(row=1,column=2)
+        Button(Cal_Frame,text='+',font=('arial',15,'bold'),command=lambda:self.get_input('+'),bd=5,width=4,pady=10,cursor="hand2").grid(row=1,column=3)
+        Button(Cal_Frame,text='4',font=('arial',15,'bold'),command=lambda:self.get_input(4),bd=5,width=4,pady=10,cursor="hand2").grid(row=2,column=0)
+        Button(Cal_Frame,text='5',font=('arial',15,'bold'),command=lambda:self.get_input(5),bd=5,width=4,pady=10,cursor="hand2").grid(row=2,column=1)
+        Button(Cal_Frame,text='6',font=('arial',15,'bold'),command=lambda:self.get_input(6),bd=5,width=4,pady=10,cursor="hand2").grid(row=2,column=2)
+        Button(Cal_Frame,text='-',font=('arial',15,'bold'),command=lambda:self.get_input('-'),bd=5,width=4,pady=10,cursor="hand2").grid(row=2,column=3)
+        Button(Cal_Frame,text='1',font=('arial',15,'bold'),command=lambda:self.get_input(1),bd=5,width=4,pady=10,cursor="hand2").grid(row=3,column=0)
+        Button(Cal_Frame,text='2',font=('arial',15,'bold'),command=lambda:self.get_input(2),bd=5,width=4,pady=10,cursor="hand2").grid(row=3,column=1)
+        Button(Cal_Frame,text='3',font=('arial',15,'bold'),command=lambda:self.get_input(3),bd=5,width=4,pady=10,cursor="hand2").grid(row=3,column=2)
+        Button(Cal_Frame,text='*',font=('arial',15,'bold'),command=lambda:self.get_input('*'),bd=5,width=4,pady=10,cursor="hand2").grid(row=3,column=3)
+        Button(Cal_Frame,text='0',font=('arial',15,'bold'),command=lambda:self.get_input(0),bd=5,width=4,pady=15,cursor="hand2").grid(row=4,column=0)
+        Button(Cal_Frame,text='c',font=('arial',15,'bold'),command=self.clear_cal,bd=5,width=4,pady=15,cursor="hand2").grid(row=4,column=1)
+        Button(Cal_Frame,text='=',font=('arial',15,'bold'),command=self.perform_cal,bd=5,width=4,pady=15,cursor="hand2").grid(row=4,column=2)
+        Button(Cal_Frame,text='/',font=('arial',15,'bold'),command=lambda:self.get_input('/'),bd=5,width=4,pady=15,cursor="hand2").grid(row=4,column=3)
             #=====Cart Frame==============================================
 
         self.cart_Frame=Frame(Cal_Cart_Frame,bd=3,relief=RIDGE)
@@ -174,13 +170,13 @@ class BillClass:
         self.CartTable.heading("name",text="Name")
         self.CartTable.heading("price",text="Price")
         self.CartTable.heading("quantity",text="quantity")
-        
+
         self.CartTable["show"]="headings"
         self.CartTable.column("pid",width=15)
         self.CartTable.column("name",width=60)
         self.CartTable.column("price",width=30)
         self.CartTable.column("quantity",width=30)
-        
+
         self.CartTable.pack(fill=BOTH,expand=1)
         self.CartTable.bind("<ButtonRelease-1>",self.get_data_cart)
 
@@ -194,31 +190,28 @@ class BillClass:
         self.var_total= 0
         self.sm_list = []
         self.fetch_sm()
-        
+
 
         Add_CartWidgetsFrame=Frame(self.root,bd=2,relief=RIDGE,bg="white")
         Add_CartWidgetsFrame.place(x=780,y=200,width=750,height=200)
-        
+
         self.icon_title = PhotoImage(file="images/sales3.png")
         title = Label(Add_CartWidgetsFrame, text="Parth Inventory Software", image=self.icon_title, compound=LEFT,font=("times new roman", 40, "bold"), bg="#010c48", fg="white", anchor="w", padx=20)
         title.place(x=410, y=5, width=600,height=440)
 
-        lbl_p_name=Label(Add_CartWidgetsFrame,text="Product Name",font=("times new roman",15),bg="white").place(x=5,y=5,width=190,height=25)
-        txt_p_name=Entry(Add_CartWidgetsFrame,textvariable=self.var_pname,font=("times new roman",15),bg="lightyellow").place(x=205,y=5,width=190,height=25)
-
-        lbl_p_price=Label(Add_CartWidgetsFrame,text="Price Per quantity",font=("times new roman",15),bg="white").place(x=5,y=42,width=190,height=25)
-        txt_p_price=Entry(Add_CartWidgetsFrame,textvariable=self.var_price,font=("times new roman",15),bg="lightyellow").place(x=205,y=42,width=190,height=25)
-        
-        lbl_p_quantity=Label(Add_CartWidgetsFrame,text="Quantity",font=("times new roman",15),bg="white").place(x=5,y=80,width=190,height=25)
-        txt_p_quantity=Entry(Add_CartWidgetsFrame,textvariable=self.var_cartquantity,font=("times new roman",15),bg="lightyellow").place(x=205,y=80,width=190,height=25)
-
+        Label(Add_CartWidgetsFrame,text="Product Name",font=("times new roman",15),bg="white").place(x=5,y=5,width=190,height=25)
+        Entry(Add_CartWidgetsFrame,textvariable=self.var_pname,font=("times new roman",15),bg="lightyellow").place(x=205,y=5,width=190,height=25)
+        Label(Add_CartWidgetsFrame,text="Price Per quantity",font=("times new roman",15),bg="white").place(x=5,y=42,width=190,height=25)
+        Entry(Add_CartWidgetsFrame,textvariable=self.var_price,font=("times new roman",15),bg="lightyellow").place(x=205,y=42,width=190,height=25)
+        Label(Add_CartWidgetsFrame,text="Quantity",font=("times new roman",15),bg="white").place(x=5,y=80,width=190,height=25)
+        Entry(Add_CartWidgetsFrame,textvariable=self.var_cartquantity,font=("times new roman",15),bg="lightyellow").place(x=205,y=80,width=190,height=25)
         lbl_salesman = Label(Add_CartWidgetsFrame,text="Salesman",font=("times new roman",15),bg="white")
         lbl_salesman.place(x=5,y=117,width=190,height=25)
         txt_salesman=ttk.Combobox(self.root,textvariable=self.var_salesman,values=self.sm_list,state="readonly",justify=CENTER,font=("times new roman",15))
         txt_salesman.place(x=985,y=317,width=190,height=25)
         #txt_p_salesman=Entry(Add_CartWidgetsFrame,textvariable=self.var_salesman,font=("times new roman",15),bg="lightyellow").place(x=205,y=117,width=190,height=25)
         txt_salesman.current(0)
-        
+
 
 
         buttonAdd_CartWidgetsFrame=Frame(Add_CartWidgetsFrame,bd=2,relief=RIDGE,bg="white",background="white")
@@ -227,18 +220,16 @@ class BillClass:
         self.lbl_inStock=Label(buttonAdd_CartWidgetsFrame,text="In Stock [9999]",font=("times new roman",15),bg="white")
         self.lbl_inStock.place(x=5,y=5,width=190,height=25)
 
-        btn_clear_cart=Button(buttonAdd_CartWidgetsFrame,text="Clear",command=self.clear_cart,font=("times new roman",15,"bold"),bg="lightgray",cursor="hand2").place(x=180,y=5,width=150,height=25)
-        btn_add_cart=Button(buttonAdd_CartWidgetsFrame,text="Add | Update Cart",command=self.add_update_cart,font=("times new roman",15,"bold"),bg="orange",cursor="hand2").place(x=340,y=5,width=180,height=25)
-
-
+        Button(buttonAdd_CartWidgetsFrame,text="Clear",command=self.clear_cart,font=("times new roman",15,"bold"),bg="lightgray",cursor="hand2").place(x=180,y=5,width=150,height=25)
+        Button(buttonAdd_CartWidgetsFrame,text="Add | Update Cart",command=self.add_update_cart,font=("times new roman",15,"bold"),bg="orange",cursor="hand2").place(x=340,y=5,width=180,height=25)
  #       ========================billing area==================
         billFrame=Frame(self.root,bd=2,relief=RIDGE,bg='white')
         billFrame.place(x=780,y=550,width=750,height=365)
 
-        Btitle = Label(billFrame, text="Customer Bill", font=("Goudy old style", 20, "bold"),bg="#FFA07A", fg="white").pack(side=TOP, fill=X)
+        Label(billFrame, text="Customer Bill", font=("Goudy old style", 20, "bold"),bg="#FFA07A", fg="white").pack(side=TOP, fill=X)
         scrolly=Scrollbar(billFrame,orient=VERTICAL)
         scrolly.pack(side=RIGHT,fill=Y)
-        
+
         self.txt_bill_area=Text(billFrame,yscrollcommand=scrolly.set)
         self.txt_bill_area.pack(fill=BOTH,expand=1)
         scrolly.config(command=self.txt_bill_area.yview)
@@ -266,13 +257,13 @@ class BillClass:
         btn_generate.place(x=500,y=70,width=235,height=60)
 
         #==============================Footer===========================
-        footer=Label(self.root,text="Parth Inventory System",font=("times new roman", 12),bg="#5d636d",fg="white",bd=0,cursor="hand2").pack(side=BOTTOM,fill=X)
-
+        Label(self.root,text="Parth Inventory System",font=("times new roman", 12),bg="#5d636d",fg="white",bd=0,cursor="hand2").pack(side=BOTTOM,fill=X)
         self.show()
         self.bill_top()
 
     def backup(self):
-        self.new_obj = BackUP.bckup(self)    
+        """Create a database backup."""
+        self.new_obj = BackUP.bckup(self)
 
     def fetch_sm(self):
         con=sqlite3.connect(database=r"C:\Users\parth\OneDrive\Desktop\PBS\pbs.db")
@@ -289,8 +280,8 @@ class BillClass:
                 for i in sm:
                     self.sm_list.append(i[0])
 
-        except Exception as error:
-            messagebox.showerror("ERROR",f"Error due to :  "+str(error),parent=self.root)    
+        except sqlite3.Error as error:
+            messagebox.showerror("ERROR",f"Error due to :  "+str(error),parent=self.root)
 
     def show(self):
         con=sqlite3.connect(database=r'C:\Users\parth\OneDrive\Desktop\PBS\pbs.db')
@@ -315,7 +306,7 @@ class BillClass:
 
         self.show()
 
-    def search(self):   
+    def search(self):
         con=sqlite3.connect(database=r"C:\Users\parth\OneDrive\Desktop\PBS\pbs.db")
         cur = con.cursor()
         try:
@@ -334,7 +325,7 @@ class BillClass:
             messagebox.showerror("ERROR",f"Error due to search :  ",{str(error)},parent=self.root)
 
 
-    def get_data(self,ev):
+    def get_data(self,_event):
         f=self.product_Table.focus()
         content=(self.product_Table.item(f))
         row=content['values']
@@ -346,7 +337,7 @@ class BillClass:
         self.show()
         #self.var_quantity.set(row[5])
 
-    def get_data_cart(self,ev):
+    def get_data_cart(self,_event):
         f=self.CartTable.focus()
         content=(self.product_Table.item(f))
         row=content['values']
@@ -362,12 +353,12 @@ class BillClass:
 
     def generate_bill(self):
         if self.var_cname.get()==''or self.var_contact.get()=='':
-            messagebox.showerror("Error",f"Customer Details are required",parent=self.root)
+            messagebox.showerror("Error","Customer Details are required",parent=self.root)
         elif len(self.cart_list)<0:
-            messagebox.showerror("Error",f"Please add product to the cart",parent=self.root)
+            messagebox.showerror("Error","Please add product to the cart",parent=self.root)
         else:
             #Bill top
-            self.bill_top() 
+            self.bill_top()
             #Bill middle
             self.bill_middle()
             #Bill Bottom
@@ -382,15 +373,15 @@ class BillClass:
                 name = self.var_cname.get()
                 num = self.var_contact.get()
                 sm = self.var_salesman.get()
-                totalAmount = self.var_total
+                total_amount = self.var_total
                 x =datetime.datetime.now()
                 Y = x.year
                 M = x.month
                 D = x.day
                 date = str(Y)+"-"+str(M)+"-"+str(D)
                 print(date)
-                cur.execute("insert into billingTable (invoiceNumber, customerName,customerPhone,sm,total,billdate) values(?,?,?,?,?,?)",(invoice,name,num,sm,totalAmount,date))
-                
+                cur.execute("insert into billingTable (invoiceNumber, customerName,customerPhone,sm,total,billdate) values(?,?,?,?,?,?)",(invoice,name,num,sm,total_amount,date))
+
             except Exception as error:
                 messagebox.showerror("ERROR",f"Error due to search :  ",{str(error)},parent=self.root)
             con.commit()
@@ -400,8 +391,8 @@ class BillClass:
             messagebox.showinfo("Saved","Bill has been generated/Save in Backend",parent=self.root)
             self.chk_print=1
         self.show()
-    
-    
+
+
 
     def bill_top(self):
         con=sqlite3.connect(database=r"C:\Users\parth\OneDrive\Desktop\PBS\pbs.db")
@@ -411,8 +402,8 @@ class BillClass:
             rows=cur.fetchall()
             a = len(rows)
             invoice = rows[a-1][0] + 1
-            
-            
+
+
         except Exception as error:
             messagebox.showerror("ERROR",f"Error due to search :  ",{str(error)},parent=self.root)
         bill_top_temp = f'''
@@ -435,10 +426,10 @@ class BillClass:
         try:
             for row in self.cart_list:
                 #print(row)
-                pid=row[0]   
+                pid=row[0]
                 name=row[1]
                 cur1.execute("SELECT quantity from product where pid=?",(pid))
-                qty = cur1.fetchone()                
+                qty = cur1.fetchone()
                 quantity=int(qty[0])-int(row[3])
                 #quantity=row[3]
                 price=float(row[2])*int(row[3])
@@ -448,9 +439,9 @@ class BillClass:
                 cur.execute('Update product set quantity=? where pid=?',(
                 quantity,
                 pid,
-                ))   
+                ))
                 con.commit()
-            con.close()    
+            con.close()
             self.show()
         except Exception as ex:
             messagebox.showerror("Error",f"Error due to billmiddle: {str(ex)}",parent=self.root)
@@ -465,23 +456,23 @@ class BillClass:
  Net Pay\t\t\t\tRs.{self.net_pay}
 {str("="*83)}\n
         '''
-        
+
         #self.txt_bill_area.append(bill_bottom_temp)
         self.txt_bill_area.insert('1500.0', bill_bottom_temp)
         #self.txt_bill_area.insert('2.0', bill_bottom_temp)
         self.show()
 
 
-    
+
     def clear_cart(self):
         self.var_pid.set('')
         self.var_pname.set('')
         self.var_price.set('')
         self.var_cartquantity.set('')
-        self.lbl_inStock.config(text=f"In Stock")
+        self.lbl_inStock.config(text="In Stock")
         self.var_stock.set('')
         self.show()
-    
+
     def clear_all(self):
         del self.cart_list[:]
         self.var_cname.set('')
@@ -490,7 +481,7 @@ class BillClass:
         self.var_pname.set('')
         self.var_price.set('')
         self.var_cartquantity.set('')
-        self.lbl_inStock.config(text=f"In Stock")
+        self.lbl_inStock.config(text="In Stock")
         self.var_stock.set('')
         self.txt_bill_area.delete('1.0',END)
         self.lbl_cartTitle.config(text=f"Cart \t Total Product: [0]")
@@ -506,21 +497,19 @@ class BillClass:
             messagebox.showerror('Error',"Please select product from the list",parent=self.root)
         elif self.var_cartquantity.get()=='':
             messagebox.showerror('Error',"Quantity is Required",parent=self.root)
-        elif int(self.var_cartquantity.get())>int(self.var_cartquantity.get()):
+        elif int(self.var_cartquantity.get())>int(self.var_stock.get()):
             messagebox.showerror('Error',"Invalid Quantity",parent=self.root)
         else:
             self.price_cal=int(self.var_cartquantity.get())*int(self.var_price.get())
-            self.price_cal=(self.price_cal)
-            self.price_cal=self.var_cartquantity.get()
             self.cart_data=[self.var_pid.get(),self.var_pname.get(),self.var_price.get(),self.var_cartquantity.get(),self.var_stock.get()]
             #=====update cart==========================================
             #self.cart_list.append(self.cart_data)
             #print(self.cart_list)
             #self.cart_list.pop(0)
             #print(self.cart_list)
-            
+
             self.cart_list.append(self.cart_data)
-            self.show_cart()  
+            self.show_cart()
             self.bill_updates()
             self.clear_cart()
         self.show()
@@ -536,7 +525,7 @@ class BillClass:
         self.net_pay=self.bill_amnt-self.discount
         self.var_total = self.net_pay
         self.lbl_amnt.config(text=f'Bill Amnt\n{str(self.bill_amnt)}')
-        self.lbl_net_pay.config(text=f'Net Pay\n{str(self.net_pay)}')    
+        self.lbl_net_pay.config(text=f'Net Pay\n{str(self.net_pay)}')
         self.lbl_cartTitle.config(text=f"Cart \t Total Product: [{str(len(self.cart_list))}]")
         self.show()
 
@@ -554,10 +543,10 @@ class BillClass:
             os.startfile(new_file,'print')
         else:
             messagebox.showerror('Print',"Please generate bill, to print the receipt",parent=self.root)
-            
+
 
 #==========================billing area================================
-    
+
 
 #=================All Functions=====================================
     def get_input(self,num):
@@ -569,8 +558,8 @@ class BillClass:
         result=self.var_cal_input.get()
         self.var_cal_input.set(eval(result))
 
-          
-          
+
+
 if __name__ == "__main__":
     root = Tk()
     obj = BillClass(root)
